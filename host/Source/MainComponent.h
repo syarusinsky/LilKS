@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "AudioSettingsComponent.h"
+#include "AudioBuffer.hpp"
 
 //==============================================================================
 /*
@@ -40,6 +41,8 @@ private:
 
     juce::TextButton audioSettingsBtn;
     AudioSettingsComponent audioSettingsComponent;
+
+    ::AudioBuffer sAudioBuffer;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)

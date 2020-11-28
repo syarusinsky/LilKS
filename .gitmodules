@@ -1,0 +1,3 @@
+[submodule "lib/SAL"]
+	path = lib/SAL
+	url = https://github.com/syarusinsky/SAL.git

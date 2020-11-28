@@ -8,6 +8,8 @@
             file="Source/AudioSettingsComponent.h"/>
       <FILE id="IUiwnj" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
+      <FILE id="qbrrWM" name="AudioBuffer.cpp" compile="1" resource="0" file="../lib/SAL/src/AudioBuffer.cpp"/>
+      <FILE id="tEwTz9" name="AudioBuffer.hpp" compile="0" resource="0" file="../lib/SAL/include/AudioBuffer.hpp"/>
       <FILE id="IUiwnf" name="AudioSettingsComponent.cpp" compile="1" resource="0"
             file="Source/AudioSettingsComponent.cpp"/>
       <FILE id="RjPdL2" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>

@@ -11,7 +11,8 @@
 //==============================================================================
 MainComponent::MainComponent() :
 	audioSettingsBtn( "Audio Settings" ),
-	audioSettingsComponent( deviceManager, 2, 2, &audioSettingsBtn )
+	audioSettingsComponent( deviceManager, 2, 2, &audioSettingsBtn ),
+	sAudioBuffer()
 {
     // Make sure you set the size of the component after
     // you add any child components.
@@ -32,6 +33,9 @@ MainComponent::MainComponent() :
 
     addAndMakeVisible( audioSettingsBtn );
     audioSettingsBtn.addListener( this );
+
+    // TODO connecting the audio buffer to the voice manager
+    // sAudioBuffer.registerCallback( &lilKSVoiceManager );
 }
 
 MainComponent::~MainComponent()
@@ -60,7 +64,21 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
 
     // Right now we are not producing any data, in which case we need to clear the buffer
     // (to prevent the output of random noise)
-    bufferToFill.clearActiveBufferRegion();
+    // bufferToFill.clearActiveBufferRegion();
+    try
+    {
+	    float* writePtrR = bufferToFill.buffer->getWritePointer( 1 );
+	    float* writePtrL = bufferToFill.buffer->getWritePointer( 0 );
+
+	    for ( int i = 0; i < bufferToFill.numSamples; i++ )
+	    {
+		    float value = sAudioBuffer.getNextSample();
+	    }
+    }
+    catch ( std::exception& e )
+    {
+	    std::cout << "Exception caught in getNextAudioBlock: " << e.what() << std::endl;
+    }
 }
 
 void MainComponent::releaseResources()
