@@ -9,17 +9,19 @@
 #include "MainComponent.h"
 
 //==============================================================================
-MainComponent::MainComponent()
+MainComponent::MainComponent() :
+	audioSettingsBtn( "Audio Settings" ),
+	audioSettingsComponent( deviceManager, 2, 2, &audioSettingsBtn )
 {
     // Make sure you set the size of the component after
     // you add any child components.
     setSize (800, 600);
 
     // Some platforms require permissions to open input channels so request that here
-    if (RuntimePermissions::isRequired (RuntimePermissions::recordAudio)
-        && ! RuntimePermissions::isGranted (RuntimePermissions::recordAudio))
+    if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
+        && ! juce::RuntimePermissions::isGranted (juce::RuntimePermissions::recordAudio))
     {
-        RuntimePermissions::request (RuntimePermissions::recordAudio,
+	    juce::RuntimePermissions::request (juce::RuntimePermissions::recordAudio,
                                      [&] (bool granted) { if (granted)  setAudioChannels (2, 2); });
     }
     else
@@ -27,6 +29,9 @@ MainComponent::MainComponent()
         // Specify the number of input and output channels that we want to open
         setAudioChannels (2, 2);
     }
+
+    addAndMakeVisible( audioSettingsBtn );
+    audioSettingsBtn.addListener( this );
 }
 
 MainComponent::~MainComponent()
@@ -47,7 +52,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // For more details, see the help for AudioProcessor::prepareToPlay()
 }
 
-void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
+void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
     // Your audio-processing code goes here!
 
@@ -67,10 +72,10 @@ void MainComponent::releaseResources()
 }
 
 //==============================================================================
-void MainComponent::paint (Graphics& g)
+void MainComponent::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
+    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
     // You can add your drawing code here!
 }
@@ -80,4 +85,11 @@ void MainComponent::resized()
     // This is called when the MainContentComponent is resized.
     // If you add any child components, this is where you should
     // update their positions.
+    int sliderLeft = 120;
+
+    audioSettingsBtn.setBounds(sliderLeft, 20, getWidth() - sliderLeft - 10, 20);
+}
+
+void MainComponent::buttonClicked (juce::Button* button)
+{
 }

@@ -35,11 +35,11 @@ ifeq ($(CONFIG),Debug)
     TARGET_ARCH := 
   endif
 
-  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DDEBUG=1 -D_DEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa x11 xinerama xext freetype2 webkit2gtk-4.0 gtk+-x11-3.0 libcurl zlib libjpeg libpng flac vorbis vorbisfile vorbisenc ogg jack) -pthread -I../../JuceLibraryCode -I/usr/share/juce/modules $(CPPFLAGS)
+  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DDEBUG=1 -D_DEBUG=1 -DDONT_SET_USING_JUCE_NAMESPACE -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa x11 xinerama xext freetype2 webkit2gtk-4.0 gtk+-x11-3.0 libcurl zlib libjpeg libpng flac vorbis vorbisfile vorbisenc ogg jack) -pthread -I../../JuceLibraryCode -I/usr/share/juce/modules $(CPPFLAGS)
   JUCE_CPPFLAGS_APP := -DJucePlugin_Build_VST=0 -DJucePlugin_Build_VST3=0 -DJucePlugin_Build_AU=0 -DJucePlugin_Build_AUv3=0 -DJucePlugin_Build_RTAS=0 -DJucePlugin_Build_AAX=0 -DJucePlugin_Build_Standalone=0 -DJucePlugin_Build_Unity=0
   JUCE_TARGET_APP := LilKS
 
-  JUCE_CFLAGS += $(JUCE_CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O0 $(CFLAGS)
+  JUCE_CFLAGS += $(JUCE_CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O0 -I../../../lib/SAL/include -I../../../include -I../../../lib/SIGL/include -I../../../lib/DevLib/include -DSOFTWARE_RENDERING $(CFLAGS)
   JUCE_CXXFLAGS += $(JUCE_CFLAGS) -std=c++14 $(CXXFLAGS)
   JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) $(shell pkg-config --libs alsa x11 xinerama xext freetype2 webkit2gtk-4.0 gtk+-x11-3.0 libcurl zlib libjpeg libpng flac vorbis vorbisfile vorbisenc ogg jack) -lrt -ldl -lpthread -lGL $(LDFLAGS)
 
@@ -56,11 +56,11 @@ ifeq ($(CONFIG),Release)
     TARGET_ARCH := 
   endif
 
-  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DNDEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa x11 xinerama xext freetype2 webkit2gtk-4.0 gtk+-x11-3.0 libcurl zlib libjpeg libpng flac vorbis vorbisfile vorbisenc ogg jack) -pthread -I../../JuceLibraryCode -I/usr/share/juce/modules $(CPPFLAGS)
+  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DNDEBUG=1 -DDONT_SET_USING_JUCE_NAMESPACE -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa x11 xinerama xext freetype2 webkit2gtk-4.0 gtk+-x11-3.0 libcurl zlib libjpeg libpng flac vorbis vorbisfile vorbisenc ogg jack) -pthread -I../../JuceLibraryCode -I/usr/share/juce/modules $(CPPFLAGS)
   JUCE_CPPFLAGS_APP := -DJucePlugin_Build_VST=0 -DJucePlugin_Build_VST3=0 -DJucePlugin_Build_AU=0 -DJucePlugin_Build_AUv3=0 -DJucePlugin_Build_RTAS=0 -DJucePlugin_Build_AAX=0 -DJucePlugin_Build_Standalone=0 -DJucePlugin_Build_Unity=0
   JUCE_TARGET_APP := LilKS
 
-  JUCE_CFLAGS += $(JUCE_CPPFLAGS) $(TARGET_ARCH) -O3 $(CFLAGS)
+  JUCE_CFLAGS += $(JUCE_CPPFLAGS) $(TARGET_ARCH) -O3 -I../../../lib/SAL/include -I../../../include -I../../../lib/SIGL/include -I../../../lib/DevLib/include -DSOFTWARE_RENDERING $(CFLAGS)
   JUCE_CXXFLAGS += $(JUCE_CFLAGS) -std=c++14 $(CXXFLAGS)
   JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) $(shell pkg-config --libs alsa x11 xinerama xext freetype2 webkit2gtk-4.0 gtk+-x11-3.0 libcurl zlib libjpeg libpng flac vorbis vorbisfile vorbisenc ogg jack) -fvisibility=hidden -lrt -ldl -lpthread -lGL $(LDFLAGS)
 
@@ -69,6 +69,7 @@ endif
 
 OBJECTS_APP := \
   $(JUCE_OBJDIR)/MainComponent_a6ffb4a5.o \
+  $(JUCE_OBJDIR)/AudioSettingsComponent_bd4686d.o \
   $(JUCE_OBJDIR)/Main_90ebc5c2.o \
   $(JUCE_OBJDIR)/include_juce_audio_basics_8a4e984a.o \
   $(JUCE_OBJDIR)/include_juce_audio_devices_63111d02.o \
@@ -100,6 +101,11 @@ $(JUCE_OUTDIR)/$(JUCE_TARGET_APP) : $(OBJECTS_APP) $(RESOURCES)
 $(JUCE_OBJDIR)/MainComponent_a6ffb4a5.o: ../../Source/MainComponent.cpp
 	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
 	@echo "Compiling MainComponent.cpp"
+	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
+
+$(JUCE_OBJDIR)/AudioSettingsComponent_bd4686d.o: ../../Source/AudioSettingsComponent.cpp
+	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
+	@echo "Compiling AudioSettingsComponent.cpp"
 	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
 
 $(JUCE_OBJDIR)/Main_90ebc5c2.o: ../../Source/Main.cpp
