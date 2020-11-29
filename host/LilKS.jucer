@@ -10,6 +10,20 @@
             file="Source/MainComponent.cpp"/>
       <FILE id="qbrrWM" name="AudioBuffer.cpp" compile="1" resource="0" file="../lib/SAL/src/AudioBuffer.cpp"/>
       <FILE id="tEwTz9" name="AudioBuffer.hpp" compile="0" resource="0" file="../lib/SAL/include/AudioBuffer.hpp"/>
+      <FILE id="qbrrWd" name="MidiHandler.cpp" compile="1" resource="0" file="../lib/SAL/src/MidiHandler.cpp"/>
+      <FILE id="tEwTzd" name="MidiHandler.hpp" compile="0" resource="0" file="../lib/SAL/include/MidiHandler.hpp"/>
+      <FILE id="qbrrWa" name="IMidiEventListener.cpp" compile="1" resource="0"
+            file="../lib/SAL/src/IMidiEventListener.cpp"/>
+      <FILE id="tEwTza" name="IMidiEventListener.hpp" compile="0" resource="0"
+            file="../lib/SAL/include/IMidiEventListener.hpp"/>
+      <FILE id="qbrrWo" name="IPitchEventListener.cpp" compile="1" resource="0"
+            file="../lib/SAL/src/IPitchEventListener.cpp"/>
+      <FILE id="tEwTzo" name="IPitchEventListener.hpp" compile="0" resource="0"
+            file="../lib/SAL/include/IPitchEventListener.hpp"/>
+      <FILE id="qbrrWz" name="IKeyEventListener.cpp" compile="1" resource="0"
+            file="../lib/SAL/src/IKeyEventListener.cpp"/>
+      <FILE id="tEwTzz" name="IKeyEventListener.hpp" compile="0" resource="0"
+            file="../lib/SAL/include/IKeyEventListener.hpp"/>
       <FILE id="IUiwnf" name="AudioSettingsComponent.cpp" compile="1" resource="0"
             file="Source/AudioSettingsComponent.cpp"/>
       <FILE id="RjPdL2" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>

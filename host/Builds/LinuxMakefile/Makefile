@@ -70,6 +70,10 @@ endif
 OBJECTS_APP := \
   $(JUCE_OBJDIR)/MainComponent_a6ffb4a5.o \
   $(JUCE_OBJDIR)/AudioBuffer_ebf7f996.o \
+  $(JUCE_OBJDIR)/MidiHandler_d1acf949.o \
+  $(JUCE_OBJDIR)/IMidiEventListener_40b5b68e.o \
+  $(JUCE_OBJDIR)/IPitchEventListener_7aadecb7.o \
+  $(JUCE_OBJDIR)/IKeyEventListener_d8980078.o \
   $(JUCE_OBJDIR)/AudioSettingsComponent_bd4686d.o \
   $(JUCE_OBJDIR)/Main_90ebc5c2.o \
   $(JUCE_OBJDIR)/include_juce_audio_basics_8a4e984a.o \
@@ -107,6 +111,26 @@ $(JUCE_OBJDIR)/MainComponent_a6ffb4a5.o: ../../Source/MainComponent.cpp
 $(JUCE_OBJDIR)/AudioBuffer_ebf7f996.o: ../../../lib/SAL/src/AudioBuffer.cpp
 	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
 	@echo "Compiling AudioBuffer.cpp"
+	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
+
+$(JUCE_OBJDIR)/MidiHandler_d1acf949.o: ../../../lib/SAL/src/MidiHandler.cpp
+	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
+	@echo "Compiling MidiHandler.cpp"
+	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
+
+$(JUCE_OBJDIR)/IMidiEventListener_40b5b68e.o: ../../../lib/SAL/src/IMidiEventListener.cpp
+	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
+	@echo "Compiling IMidiEventListener.cpp"
+	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
+
+$(JUCE_OBJDIR)/IPitchEventListener_7aadecb7.o: ../../../lib/SAL/src/IPitchEventListener.cpp
+	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
+	@echo "Compiling IPitchEventListener.cpp"
+	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
+
+$(JUCE_OBJDIR)/IKeyEventListener_d8980078.o: ../../../lib/SAL/src/IKeyEventListener.cpp
+	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
+	@echo "Compiling IKeyEventListener.cpp"
 	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
 
 $(JUCE_OBJDIR)/AudioSettingsComponent_bd4686d.o: ../../Source/AudioSettingsComponent.cpp

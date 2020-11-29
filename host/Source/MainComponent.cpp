@@ -10,9 +10,13 @@
 
 //==============================================================================
 MainComponent::MainComponent() :
+	lastInputIndex( 0 ),
 	audioSettingsBtn( "Audio Settings" ),
 	audioSettingsComponent( deviceManager, 2, 2, &audioSettingsBtn ),
-	sAudioBuffer()
+	sAudioBuffer(),
+	midiHandler(),
+	midiInputList(),
+	midiInputListLbl()
 {
     // Make sure you set the size of the component after
     // you add any child components.
@@ -33,6 +37,29 @@ MainComponent::MainComponent() :
 
     addAndMakeVisible( audioSettingsBtn );
     audioSettingsBtn.addListener( this );
+
+    addAndMakeVisible( midiInputList );
+    midiInputList.setTextWhenNoChoicesAvailable( "No MIDI Inputs Enabled" );
+    auto midiInputs = juce::MidiInput::getDevices();
+    midiInputList.addItemList( midiInputs, 1 );
+    midiInputList.onChange = [this] { setMidiInput( midiInputList.getSelectedItemIndex() ); };
+    // find the first enabled device and use that by default
+    for ( auto midiInput : midiInputs )
+    {
+	    if ( deviceManager.isMidiInputEnabled(midiInput) )
+	    {
+		    setMidiInput( midiInputs.indexOf(midiInput) );
+		    break;
+	    }
+    }
+    // if no enabled devices were found just use the first one in the list
+    if ( midiInputList.getSelectedId() == 0 )
+    {
+	    setMidiInput( 0 );
+    }
+    addAndMakeVisible( midiInputListLbl );
+    midiInputListLbl.setText( "Midi Input Device", juce::dontSendNotification );
+    midiInputListLbl.attachToComponent( &midiInputList, true );
 
     // TODO connecting the audio buffer to the voice manager
     // sAudioBuffer.registerCallback( &lilKSVoiceManager );
@@ -106,8 +133,38 @@ void MainComponent::resized()
     int sliderLeft = 120;
 
     audioSettingsBtn.setBounds(sliderLeft, 20, getWidth() - sliderLeft - 10, 20);
+    midiInputList.setBounds   (sliderLeft, 50, getWidth() - sliderLeft - 10, 20);
 }
 
 void MainComponent::buttonClicked (juce::Button* button)
 {
+}
+
+void MainComponent::setMidiInput (int index)
+{
+	auto list = juce::MidiInput::getDevices();
+
+	deviceManager.removeMidiInputCallback( list[lastInputIndex], this );
+
+	auto newInput = list[index];
+
+	if ( !deviceManager.isMidiInputEnabled(newInput) )
+	{
+		deviceManager.setMidiInputEnabled( newInput, true );
+	}
+
+	deviceManager.addMidiInputCallback( newInput, this );
+	midiInputList.setSelectedId( index + 1, juce::dontSendNotification );
+
+	lastInputIndex = index;
+}
+
+void MainComponent::handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message)
+{
+	for ( int byte = 0; byte < message.getRawDataSize(); byte++ )
+	{
+		midiHandler.processByte( message.getRawData()[byte] );
+	}
+
+	midiHandler.dispatchEvents();
 }

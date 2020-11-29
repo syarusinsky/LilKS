@@ -11,13 +11,14 @@
 #include <JuceHeader.h>
 #include "AudioSettingsComponent.h"
 #include "AudioBuffer.hpp"
+#include "MidiHandler.hpp"
 
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent   : public juce::AudioAppComponent, public juce::Button::Listener
+class MainComponent   : public juce::AudioAppComponent, public juce::Button::Listener, public juce::MidiInputCallback
 {
 public:
     //==============================================================================
@@ -35,14 +36,23 @@ public:
 
     void buttonClicked (juce::Button* button) override;
 
+    void setMidiInput (int index);
+    void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage &message) override;
+
 private:
     //==============================================================================
     // Your private member variables go here...
 
-    juce::TextButton audioSettingsBtn;
-    AudioSettingsComponent audioSettingsComponent;
+    int 			lastInputIndex;
 
-    ::AudioBuffer sAudioBuffer;
+    juce::TextButton 		audioSettingsBtn;
+    AudioSettingsComponent 	audioSettingsComponent;
+
+    ::AudioBuffer 		sAudioBuffer;
+    MidiHandler 		midiHandler;
+
+    juce::ComboBox 		midiInputList;
+    juce::Label 		midiInputListLbl;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
