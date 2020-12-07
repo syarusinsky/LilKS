@@ -15,6 +15,7 @@ MainComponent::MainComponent() :
 	audioSettingsComponent( deviceManager, 2, 2, &audioSettingsBtn ),
 	sAudioBuffer(),
 	midiHandler(),
+	lilKSVoice(),
 	midiInputList(),
 	midiInputListLbl()
 {
@@ -61,8 +62,11 @@ MainComponent::MainComponent() :
     midiInputListLbl.setText( "Midi Input Device", juce::dontSendNotification );
     midiInputListLbl.attachToComponent( &midiInputList, true );
 
+    // bind to event systems
+    lilKSVoice.bindToKeyEventSystem();
+
     // TODO connecting the audio buffer to the voice manager
-    // sAudioBuffer.registerCallback( &lilKSVoiceManager );
+    sAudioBuffer.registerCallback( &lilKSVoice );
 }
 
 MainComponent::~MainComponent()
@@ -100,6 +104,8 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
 	    for ( int i = 0; i < bufferToFill.numSamples; i++ )
 	    {
 		    float value = sAudioBuffer.getNextSample();
+		    writePtrR[i] = value;
+		    writePtrL[i] = value;
 	    }
     }
     catch ( std::exception& e )

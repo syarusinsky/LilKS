@@ -12,6 +12,7 @@
 #include "AudioSettingsComponent.h"
 #include "AudioBuffer.hpp"
 #include "MidiHandler.hpp"
+#include "LilKSVoice.hpp"
 
 //==============================================================================
 /*
@@ -50,6 +51,8 @@ private:
 
     ::AudioBuffer 		sAudioBuffer;
     MidiHandler 		midiHandler;
+
+    LilKSVoice 			lilKSVoice;
 
     juce::ComboBox 		midiInputList;
     juce::Label 		midiInputListLbl;
