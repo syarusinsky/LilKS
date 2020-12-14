@@ -1,3 +1,6 @@
 [submodule "lib/SAL"]
 	path = lib/SAL
 	url = https://github.com/syarusinsky/SAL.git
+[submodule "lib/DevLib"]
+	path = lib/DevLib
+	url = https://github.com/syarusinsky/DevLib.git

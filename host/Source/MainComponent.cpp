@@ -15,7 +15,8 @@ MainComponent::MainComponent() :
 	audioSettingsComponent( deviceManager, 2, 2, &audioSettingsBtn ),
 	sAudioBuffer(),
 	midiHandler(),
-	lilKSVoice(),
+	fakeStorageDevice( 65536 * 4 ), // sram size on Gen_FX_SYN boards, with four srams installed
+	lilKSVoice( &fakeStorageDevice, 1 ),
 	midiInputList(),
 	midiInputListLbl()
 {

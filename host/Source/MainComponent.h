@@ -12,6 +12,7 @@
 #include "AudioSettingsComponent.h"
 #include "AudioBuffer.hpp"
 #include "MidiHandler.hpp"
+#include "FakeStorageDevice.hpp"
 #include "LilKSVoice.hpp"
 
 //==============================================================================
@@ -51,6 +52,8 @@ private:
 
     ::AudioBuffer 		sAudioBuffer;
     MidiHandler 		midiHandler;
+
+    FakeStorageDevice 		fakeStorageDevice;
 
     LilKSVoice 			lilKSVoice;
 

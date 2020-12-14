@@ -9,11 +9,12 @@
 #include "IKeyEventListener.hpp"
 #include "IBufferCallback.hpp"
 #include "AudioConstants.hpp"
+#include "IStorageMedia.hpp"
 
 class LilKSVoice : public IKeyEventListener, public IBufferCallback
 {
 	public:
-		LilKSVoice();
+		LilKSVoice (IStorageMedia* storageMedia, unsigned int voiceNum);
 		~LilKSVoice();
 
 		void onKeyEvent (const KeyEvent& keyEvent) override;
@@ -22,10 +23,9 @@ class LilKSVoice : public IKeyEventListener, public IBufferCallback
 
 	private:
 		static const int 	m_NoiseBufferSize = static_cast<int>( SAMPLE_RATE / MUSIC_A0 );
-		static float 		m_NoiseBuffer[m_NoiseBufferSize];
+		IStorageMedia* 		m_StorageMedia;
 
-		float 			m_KSBuffer[m_NoiseBufferSize];
-
+		unsigned int 		m_KSBufferOffset;
 		unsigned int 		m_KSBufferIncr;
 		unsigned int 		m_KSBufferMax;
 };

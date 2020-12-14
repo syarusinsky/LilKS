@@ -14,6 +14,10 @@
       <FILE id="tEwTzd" name="MidiHandler.hpp" compile="0" resource="0" file="../lib/SAL/include/MidiHandler.hpp"/>
       <FILE id="qbrrWg" name="LilKSVoice.cpp" compile="1" resource="0" file="../src/LilKSVoice.cpp"/>
       <FILE id="tEwTzg" name="LilKSVoice.hpp" compile="0" resource="0" file="../include/LilKSVoice.hpp"/>
+      <FILE id="qbsrWa" name="FakeStorageDevice.cpp" compile="1" resource="0"
+            file="../lib/DevLib/src/FakeStorageDevice.cpp"/>
+      <FILE id="tEsTza" name="FakeStorageDevice.hpp" compile="0" resource="0"
+            file="../lib/DevLib/include/FakeStorageDevice.hpp"/>
       <FILE id="qbrrWa" name="IMidiEventListener.cpp" compile="1" resource="0"
             file="../lib/SAL/src/IMidiEventListener.cpp"/>
       <FILE id="tEwTza" name="IMidiEventListener.hpp" compile="0" resource="0"
