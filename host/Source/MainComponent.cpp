@@ -108,6 +108,8 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
 		    writePtrR[i] = value;
 		    writePtrL[i] = value;
 	    }
+
+	    sAudioBuffer.pollToFillBuffers();
     }
     catch ( std::exception& e )
     {
