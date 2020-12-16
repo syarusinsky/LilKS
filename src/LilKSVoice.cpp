@@ -22,6 +22,17 @@ LilKSVoice::LilKSVoice (IStorageMedia* storageMedia, unsigned int voiceNum ) :
 
 	// write the noise buffer to the storage device
 	m_StorageMedia->writeToMedia( noiseBuffer, 0 );
+
+	// initialize the ks buffer with silence
+	SharedData<uint8_t> ksBuffer = m_StorageMedia->readFromMedia( m_NoiseBufferSize * sizeof(float), m_KSBufferOffset );
+	float* ksBufferPtr = reinterpret_cast<float*>( ksBuffer.getPtr() );
+
+	for ( unsigned int sample = 0; sample < ABUFFER_SIZE; sample++ )
+	{
+		ksBufferPtr[m_KSBufferIncr] = 0.0f;
+	}
+
+	m_StorageMedia->writeToMedia( ksBuffer, m_KSBufferOffset );
 }
 
 LilKSVoice::~LilKSVoice()
@@ -384,9 +395,6 @@ void LilKSVoice::onKeyEvent (const KeyEvent& keyEvent)
 
 void LilKSVoice::call (float* writeBuffer)
 {
-	// first clear write buffer
-	memset( writeBuffer, 0, sizeof(float) * ABUFFER_SIZE );
-
 	// retrieve the KS buffer from the storage media
 	SharedData<uint8_t> ksBuffer = m_StorageMedia->readFromMedia( m_NoiseBufferSize * sizeof(float), m_KSBufferOffset );
 	float* ksBufferPtr = reinterpret_cast<float*>( ksBuffer.getPtr() );
@@ -394,10 +402,11 @@ void LilKSVoice::call (float* writeBuffer)
 	// fill the buffer with samples from this voice
 	for ( unsigned int sample = 0; sample < ABUFFER_SIZE; sample++ )
 	{
-		writeBuffer[sample] = ksBufferPtr[m_KSBufferIncr];
+		float value = ksBufferPtr[m_KSBufferIncr];
+		writeBuffer[sample] += ( value * 0.166666666666f );
 		m_KSBufferIncr = ( m_KSBufferIncr + 1 ) % m_KSBufferMax;
 
-		ksBufferPtr[m_KSBufferIncr] = ( writeBuffer[sample] + ksBufferPtr[m_KSBufferIncr] ) * 0.5f;
+		ksBufferPtr[m_KSBufferIncr] = ( value + ksBufferPtr[m_KSBufferIncr] ) * 0.5f;
 	}
 
 	// rewrite the KS buffer to the storage media

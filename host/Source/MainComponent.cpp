@@ -16,7 +16,7 @@ MainComponent::MainComponent() :
 	sAudioBuffer(),
 	midiHandler(),
 	fakeStorageDevice( 65536 * 4 ), // sram size on Gen_FX_SYN boards, with four srams installed
-	lilKSVoice( &fakeStorageDevice, 1 ),
+	lilKSVoiceManager( &fakeStorageDevice ),
 	midiInputList(),
 	midiInputListLbl()
 {
@@ -64,10 +64,13 @@ MainComponent::MainComponent() :
     midiInputListLbl.attachToComponent( &midiInputList, true );
 
     // bind to event systems
-    lilKSVoice.bindToKeyEventSystem();
+    lilKSVoiceManager.bindToKeyEventSystem();
 
-    // TODO connecting the audio buffer to the voice manager
-    sAudioBuffer.registerCallback( &lilKSVoice );
+    // TODO monophonic mode needs to be debugged!
+    // lilKSVoiceManager.setMonophonic( true );
+
+    // connecting the audio buffer to the voice manager
+    sAudioBuffer.registerCallback( &lilKSVoiceManager );
 }
 
 MainComponent::~MainComponent()

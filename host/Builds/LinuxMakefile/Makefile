@@ -72,6 +72,7 @@ OBJECTS_APP := \
   $(JUCE_OBJDIR)/AudioBuffer_ebf7f996.o \
   $(JUCE_OBJDIR)/MidiHandler_d1acf949.o \
   $(JUCE_OBJDIR)/LilKSVoice_fcecbb2a.o \
+  $(JUCE_OBJDIR)/LilKSVoiceManager_4408b5ad.o \
   $(JUCE_OBJDIR)/FakeStorageDevice_f86b1aa0.o \
   $(JUCE_OBJDIR)/IMidiEventListener_40b5b68e.o \
   $(JUCE_OBJDIR)/IPitchEventListener_7aadecb7.o \
@@ -123,6 +124,11 @@ $(JUCE_OBJDIR)/MidiHandler_d1acf949.o: ../../../lib/SAL/src/MidiHandler.cpp
 $(JUCE_OBJDIR)/LilKSVoice_fcecbb2a.o: ../../../src/LilKSVoice.cpp
 	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
 	@echo "Compiling LilKSVoice.cpp"
+	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
+
+$(JUCE_OBJDIR)/LilKSVoiceManager_4408b5ad.o: ../../../src/LilKSVoiceManager.cpp
+	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
+	@echo "Compiling LilKSVoiceManager.cpp"
 	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
 
 $(JUCE_OBJDIR)/FakeStorageDevice_f86b1aa0.o: ../../../lib/DevLib/src/FakeStorageDevice.cpp

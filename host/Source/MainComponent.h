@@ -13,7 +13,7 @@
 #include "AudioBuffer.hpp"
 #include "MidiHandler.hpp"
 #include "FakeStorageDevice.hpp"
-#include "LilKSVoice.hpp"
+#include "LilKSVoiceManager.hpp"
 
 //==============================================================================
 /*
@@ -55,7 +55,7 @@ private:
 
     FakeStorageDevice 		fakeStorageDevice;
 
-    LilKSVoice 			lilKSVoice;
+    LilKSVoiceManager 		lilKSVoiceManager;
 
     juce::ComboBox 		midiInputList;
     juce::Label 		midiInputListLbl;
