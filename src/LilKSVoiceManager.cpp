@@ -69,7 +69,7 @@ void LilKSVoiceManager::onKeyEvent (const KeyEvent& keyEvent)
 			}
 		}
 	}
-	else // monophonic implementation 	TODO needs to be debugged!
+	else // monophonic implementation
 	{
 		if ( keyEvent.pressed() == KeyPressedEnum::PRESSED )
 		{

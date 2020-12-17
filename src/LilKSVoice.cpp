@@ -41,7 +41,7 @@ LilKSVoice::~LilKSVoice()
 
 void LilKSVoice::onKeyEvent (const KeyEvent& keyEvent)
 {
-	if ( keyEvent.pressed() == KeyPressedEnum::PRESSED )
+	if ( keyEvent.pressed() == KeyPressedEnum::PRESSED || keyEvent.pressed() == KeyPressedEnum::HELD )
 	{
 		float frequency = MUSIC_A0;
 		switch ( keyEvent.note() )

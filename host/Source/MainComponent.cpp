@@ -66,9 +66,6 @@ MainComponent::MainComponent() :
     // bind to event systems
     lilKSVoiceManager.bindToKeyEventSystem();
 
-    // TODO monophonic mode needs to be debugged!
-    // lilKSVoiceManager.setMonophonic( true );
-
     // connecting the audio buffer to the voice manager
     sAudioBuffer.registerCallback( &lilKSVoiceManager );
 }
