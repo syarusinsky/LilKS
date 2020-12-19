@@ -403,7 +403,7 @@ void LilKSVoice::call (float* writeBuffer)
 	for ( unsigned int sample = 0; sample < ABUFFER_SIZE; sample++ )
 	{
 		float value = ksBufferPtr[m_KSBufferIncr];
-		writeBuffer[sample] += ( value * 0.166666666666f );
+		writeBuffer[sample] += ( value * 0.166665f );
 		m_KSBufferIncr = ( m_KSBufferIncr + 1 ) % m_KSBufferMax;
 
 		ksBufferPtr[m_KSBufferIncr] = ( value + ksBufferPtr[m_KSBufferIncr] ) * 0.5f;
