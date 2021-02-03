@@ -11,7 +11,7 @@
 
 // to disassemble -- arm-none-eabi-objdump -S --disassemble main_debug.elf > disassembled.s
 
-#define SYS_CLOCK_FREQUENCY 32000000
+#define SYS_CLOCK_FREQUENCY 64000000
 
 // global variables
 volatile bool ledState = false; // led state: true for on, false for off
@@ -295,8 +295,11 @@ void disableUnusedPins()
 
 int main(void)
 {
-	// clock setup
-	LLPD::rcc_clock_setup( RCC_CLOCK_SOURCE::EXTERNAL, false );
+	// set system clock to PLL with HSE (32MHz) as input, so 64MHz system clock speed
+	LLPD::rcc_clock_setup( RCC_CLOCK_SOURCE::EXTERNAL, false, RCC_PLL_MULTIPLY::BY_2, SYS_CLOCK_FREQUENCY );
+
+	// prescale APB1 by 2, since the maximum clock speed is 36MHz
+	LLPD::rcc_set_periph_clock_prescalers( RCC_AHB_PRES::BY_1, RCC_APB1_PRES::AHB_BY_2, RCC_APB2_PRES::AHB_BY_1 );
 
 	// enable all gpio clocks
 	LLPD::gpio_enable_clock( GPIO_PORT::A );
@@ -311,8 +314,9 @@ int main(void)
 	// disable the unused pins
 	disableUnusedPins();
 
+	// TODO TODO TODO TODO TODO TODO need to find the 64MHz source 100KHz clock !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// i2c setup (8MHz source 100KHz clock 0x00201D2B, 32MHz source 100KHz clock 0x00B07CB4, 72MHz source 100KHz 0x10C08DCF)
-	LLPD::i2c_master_setup( I2C_NUM::I2C_2, 0x00B07CB4 );
+	LLPD::i2c_master_setup( I2C_NUM::I2C_2, 0x00B07CB4 ); // i2c uses APB1 clock, so since it's divided by 2, we use 32MHz source clock
 	LLPD::usart_log( USART_NUM::USART_3, "I2C initialized..." );
 
 	// spi init
@@ -324,8 +328,9 @@ int main(void)
 	LLPD::gpio_output_setup( LED_PORT, LED_PIN, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL, GPIO_OUTPUT_SPEED::HIGH );
 	LLPD::gpio_output_set( LED_PORT, LED_PIN, ledState );
 
-	// audio timer setup (for 40 kHz sampling rate at 32 MHz system clock)
-	LLPD::tim6_counter_setup( 1, 800, 40000 );
+	// audio timer setup (for 40 kHz sampling rate at 64 MHz system clock)
+	// NOTE: TIM6 uses APB1 clock, but this value is doubled if the prescaler value != 1
+	LLPD::tim6_counter_setup( 1, 1600, 40000 );
 	LLPD::tim6_counter_enable_interrupts();
 	LLPD::usart_log( USART_NUM::USART_3, "tim6 initialized..." );
 
@@ -345,7 +350,6 @@ int main(void)
 	LLPD::usart_log( USART_NUM::USART_3, "tim6 started..." );
 
 	// ADC setup (note, this must be done after the tim6_counter_start() call since it uses the delay function)
-	LLPD::rcc_pll_enable( RCC_CLOCK_SOURCE::INTERNAL, RCC_PLL_MULTIPLY::NONE );
 	LLPD::gpio_analog_setup( EFFECT1_ADC_PORT, EFFECT1_ADC_PIN );
 	LLPD::gpio_analog_setup( EFFECT2_ADC_PORT, EFFECT2_ADC_PIN );
 	LLPD::gpio_analog_setup( EFFECT3_ADC_PORT, EFFECT3_ADC_PIN );
@@ -450,7 +454,7 @@ extern "C" void TIM6_DAC_IRQHandler (void)
 		{
 			LLPD::adc_perform_conversion_sequence();
 
-			uint16_t outputVal = audioBufferPtr->getNextSample() * 4095;
+			uint16_t outputVal = static_cast<uint16_t>( audioBufferPtr->getNextSample() * 4095 );
 
 			LLPD::dac_send( outputVal );
 		}
@@ -481,9 +485,12 @@ extern "C" void TIM6_DAC_IRQHandler (void)
 
 extern "C" void USART3_IRQHandler (void)
 {
-	// loopback test code for usart recieve
-	uint16_t data = LLPD::usart_receive( USART_NUM::USART_3 );
+	if ( lilKSSetupComplete )
+	{
+		// loopback test code for usart recieve
+		uint16_t data = LLPD::usart_receive( USART_NUM::USART_3 );
 
-	midiHandlerPtr->processByte( data );
-	midiHandlerPtr->dispatchEvents();
+		midiHandlerPtr->processByte( data );
+		midiHandlerPtr->dispatchEvents();
+	}
 }
