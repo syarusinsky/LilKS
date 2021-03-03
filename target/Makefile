@@ -82,6 +82,7 @@ CFLAGS += -fno-rtti
 CFLAGS += -ffunction-sections
 CFLAGS += -fdata-sections
 CFLAGS += -D$(VARIANT)
+CFLAGS += -DTARGET_BUILD
 
 # linker directives.
 LSCRIPT = ./$(LD_SCRIPT)
@@ -118,10 +119,10 @@ release: $(TARGET)_release.bin
 	$(CC) -x assembler-with-cpp $(ASFLAGS) $< -o $@
 
 %_release.o: %.c
-	$(CC) -c -g -O3 $(CFLAGS) $(INCLUDE) $< -o $@
+	$(CC) -c -g -O1 $(CFLAGS) $(INCLUDE) $< -o $@
 
 %_release.o: %.cpp
-	$(CC) -c -g -O3 $(CFLAGS) $(INCLUDE) $< -o $@
+	$(CC) -c -g -O1 $(CFLAGS) $(INCLUDE) $< -o $@
 
 $(TARGET)_release.elf: $(RELEASE_OBJS)
 	$(CC) $^ $(LFLAGS) -o $@

@@ -21,13 +21,17 @@ class LilKSVoice : public IKeyEventListener, public IBufferCallback
 
 		void call (float* writeBuffer) override;
 
-	private:
 		static const int 	m_NoiseBufferSize = static_cast<int>( SAMPLE_RATE / MUSIC_A0 );
+
+	private:
 		IStorageMedia* 		m_StorageMedia;
 
-		unsigned int 		m_KSBufferOffset;
-		unsigned int 		m_KSBufferIncr;
-		unsigned int 		m_KSBufferMax;
+		const unsigned int 	m_KSBufferOffset;
+		volatile unsigned int 	m_KSBufferIncr;
+		volatile unsigned int 	m_KSBufferMax;
+
+		volatile bool 		m_KeyEventOccurring;
+		volatile bool 		m_CallEventOccurring;
 };
 
 #endif // LILKSVOICE_HPP

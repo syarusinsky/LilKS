@@ -1,4 +1,5 @@
 #include "../lib/STM32f302x8-HAL/llpd/include/LLPD.hpp"
+#include "../lib/STM32f302x8-HAL/stm32cubef3/include/stm32f302xc.h"
 
 #include <math.h>
 
@@ -15,7 +16,7 @@
 
 // global variables
 volatile bool ledState = false; // led state: true for on, false for off
-volatile bool keepBlinking = true; // a test variable that determines whether or not to flash the led
+volatile bool keepBlinking = false; // a test variable that determines whether or not to flash the led
 volatile bool adcSetupComplete = false; // should be set to true after adc has been initialized
 volatile int ledIncr = 0; // should flash led every time this value is equal to ledMax
 volatile int ledMax = 20000;
@@ -64,205 +65,6 @@ MidiHandler* 		midiHandlerPtr;
 LilKSVoiceManager* 	voiceManagerPtr;
 bool 			lilKSSetupComplete = false;
 
-// a simple class to manage the 4 srams available on the Gen_FX_SYN Rev 1 board
-class Sram_Manager : public IStorageMedia
-{
-	public:
-		Sram_Manager (const SPI_NUM& spiNum, const GPIO_PORT& sram1CsPort, const GPIO_PIN& sram1CsPin,
-				const GPIO_PORT& sram2CsPort, const GPIO_PIN& sram2CsPin,
-				const GPIO_PORT& sram3CsPort, const GPIO_PIN& sram3CsPin,
-				const GPIO_PORT& sram4CsPort, const GPIO_PIN& sram4CsPin, bool hasMBR = false) :
-			m_Sram1( spiNum, sram1CsPort, sram1CsPin ),
-			m_Sram2( spiNum, sram2CsPort, sram2CsPin ),
-			m_Sram3( spiNum, sram3CsPort, sram3CsPin ),
-			m_Sram4( spiNum, sram4CsPort, sram4CsPin ),
-			m_Size( Sram_23K256::SRAM_SIZE * 4 )
-		{
-			// setup gpio for cs pins
-			LLPD::gpio_output_setup( sram1CsPort, sram1CsPin, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
-							GPIO_OUTPUT_SPEED::HIGH, false );
-			LLPD::gpio_output_set( sram1CsPort, sram1CsPin, true );
-
-			LLPD::gpio_output_setup( sram2CsPort, sram2CsPin, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
-							GPIO_OUTPUT_SPEED::HIGH, false );
-			LLPD::gpio_output_set( sram2CsPort, sram2CsPin, true );
-
-			LLPD::gpio_output_setup( sram3CsPort, sram3CsPin, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
-							GPIO_OUTPUT_SPEED::HIGH, false );
-			LLPD::gpio_output_set( sram3CsPort, sram3CsPin, true );
-
-			LLPD::gpio_output_setup( sram4CsPort, sram4CsPin, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
-							GPIO_OUTPUT_SPEED::HIGH, false );
-			LLPD::gpio_output_set( sram4CsPort, sram4CsPin, true );
-		}
-
-		void writeByte (uint32_t address, uint8_t data)
-		{
-			if ( address < Sram_23K256::SRAM_SIZE )
-			{
-				// write to sram 1
-				m_Sram1.writeByte( address, data );
-			}
-			else if ( address < Sram_23K256::SRAM_SIZE * 2 )
-			{
-				// write to sram 2
-				address = ( address - Sram_23K256::SRAM_SIZE );
-				m_Sram2.writeByte( address, data );
-			}
-			else if ( address < Sram_23K256::SRAM_SIZE * 3 )
-			{
-				// write to sram 3
-				address = ( address - (Sram_23K256::SRAM_SIZE * 2) );
-				m_Sram3.writeByte( address, data );
-			}
-			else if ( address < m_Size )
-			{
-				// write to sram 4
-				address = ( address - (Sram_23K256::SRAM_SIZE * 3) );
-				m_Sram4.writeByte( address, data );
-			}
-		}
-
-		uint8_t readByte (uint32_t address)
-		{
-			if ( address < Sram_23K256::SRAM_SIZE )
-			{
-				// read from sram 1
-				return m_Sram1.readByte( address );
-			}
-			else if ( address < Sram_23K256::SRAM_SIZE * 2 )
-			{
-				// read from sram 2
-				address = ( address - Sram_23K256::SRAM_SIZE );
-				return m_Sram2.readByte( address );
-			}
-			else if ( address < Sram_23K256::SRAM_SIZE * 3 )
-			{
-				// read from sram 3
-				address = ( address - (Sram_23K256::SRAM_SIZE * 2) );
-				return m_Sram3.readByte( address );
-			}
-			else if ( address < m_Size )
-			{
-				// read from sram 4
-				address = ( address - (Sram_23K256::SRAM_SIZE * 3) );
-				return m_Sram4.readByte( address );
-			}
-
-			return 0;
-		}
-
-		void writeToMedia (const SharedData<uint8_t>& data, const unsigned int address) override
-		{
-			uint8_t* dataPtr = data.getPtr();
-
-			for ( unsigned int byte = 0; byte < data.getSizeInBytes(); byte++ )
-			{
-				this->writeByte( address + byte, dataPtr[byte] );
-			}
-		}
-
-		SharedData<uint8_t> readFromMedia (const unsigned int sizeInBytes, const unsigned int address) override
-		{
-			SharedData<uint8_t> data = SharedData<uint8_t>::MakeSharedData( sizeInBytes );
-			uint8_t* dataPtr = data.getPtr();
-
-			for ( unsigned int byte = 0; byte < data.getSizeInBytes(); byte++ )
-			{
-				dataPtr[byte] = this->readByte( address + byte );
-			}
-
-			return data;
-		}
-
-		bool needsInitialization() override { return false; }
-		void initialize() override {}
-		void afterInitialize() override {}
-
-		bool hasMBR() override { return false; }
-
-	private:
-		Sram_23K256 	m_Sram1;
-		Sram_23K256 	m_Sram2;
-		Sram_23K256 	m_Sram3;
-		Sram_23K256 	m_Sram4;
-		uint32_t 	m_Size;
-};
-
-// a simple class to manage the 2 eeproms available on the Gen_FX_SYN Rev 1 board
-class Eeprom_Manager : public IStorageMedia
-{
-	public:
-		Eeprom_Manager (const I2C_NUM& i2cNum, bool Eeprom1A0IsHigh, bool Eeprom1A1IsHigh, bool Eeprom1A2IsHigh,
-				bool Eeprom2A0IsHigh, bool Eeprom2A1IsHigh, bool Eeprom2A2IsHigh) :
-			m_Eeprom1( i2cNum, Eeprom1A0IsHigh, Eeprom1A1IsHigh, Eeprom1A2IsHigh ),
-			m_Eeprom2( i2cNum, Eeprom2A0IsHigh, Eeprom2A1IsHigh, Eeprom2A2IsHigh )
-		{
-		}
-
-		void writeByte (uint16_t address, uint8_t data)
-		{
-			if ( address < Eeprom_CAT24C64::EEPROM_SIZE )
-			{
-				m_Eeprom1.writeByte( address, data );
-			}
-			else if ( address < m_Size )
-			{
-				address = ( address - Eeprom_CAT24C64::EEPROM_SIZE );
-				m_Eeprom2.writeByte( address, data );
-			}
-		}
-
-		uint8_t readByte (uint16_t address)
-		{
-			if ( address < Eeprom_CAT24C64::EEPROM_SIZE )
-			{
-				return m_Eeprom1.readByte( address );
-			}
-			else if ( address < m_Size )
-			{
-				address = ( address - Eeprom_CAT24C64::EEPROM_SIZE );
-				return m_Eeprom2.readByte( address );
-			}
-
-			return 0;
-		}
-
-		void writeToMedia (const SharedData<uint8_t>& data, const unsigned int address) override
-		{
-			uint8_t* dataPtr = data.getPtr();
-
-			for ( unsigned int byte = 0; byte < data.getSizeInBytes(); byte++ )
-			{
-				this->writeByte( address + byte, dataPtr[byte] );
-			}
-		}
-
-		SharedData<uint8_t> readFromMedia (const unsigned int sizeInBytes, const unsigned int address) override
-		{
-			SharedData<uint8_t> data = SharedData<uint8_t>::MakeSharedData( sizeInBytes );
-			uint8_t* dataPtr = data.getPtr();
-
-			for ( unsigned int byte = 0; byte < data.getSizeInBytes(); byte++ )
-			{
-				dataPtr[byte] = this->readByte( address + byte );
-			}
-
-			return data;
-		}
-
-		bool needsInitialization() override { return false; }
-		void initialize() override {}
-		void afterInitialize() override {}
-
-		bool hasMBR() override { return false; }
-
-	private:
-		Eeprom_CAT24C64 	m_Eeprom1;
-		Eeprom_CAT24C64 	m_Eeprom2;
-		uint32_t 		m_Size;
-};
-
 // these pins are unconnected on Gen_FX_SYN Rev 1 development board, so we disable them as per the ST recommendations
 void disableUnusedPins()
 {
@@ -295,8 +97,8 @@ void disableUnusedPins()
 
 int main(void)
 {
-	// set system clock to PLL with HSE (32MHz) as input, so 64MHz system clock speed
-	LLPD::rcc_clock_setup( RCC_CLOCK_SOURCE::EXTERNAL, false, RCC_PLL_MULTIPLY::BY_2, SYS_CLOCK_FREQUENCY );
+	// set system clock to PLL with HSE (32MHz / 2) as input, so 64MHz system clock speed
+	LLPD::rcc_clock_setup( RCC_CLOCK_SOURCE::EXTERNAL, true, RCC_PLL_MULTIPLY::BY_4, SYS_CLOCK_FREQUENCY );
 
 	// prescale APB1 by 2, since the maximum clock speed is 36MHz
 	LLPD::rcc_set_periph_clock_prescalers( RCC_AHB_PRES::BY_1, RCC_APB1_PRES::AHB_BY_2, RCC_APB2_PRES::AHB_BY_1 );
@@ -305,49 +107,49 @@ int main(void)
 	LLPD::gpio_enable_clock( GPIO_PORT::A );
 	LLPD::gpio_enable_clock( GPIO_PORT::B );
 	LLPD::gpio_enable_clock( GPIO_PORT::C );
+	LLPD::gpio_enable_clock( GPIO_PORT::F );
 
 	// USART setup
-	LLPD::usart_init( USART_NUM::USART_3, USART_WORD_LENGTH::BITS_8, USART_PARITY::EVEN, USART_CONF::TX_AND_RX,
-				USART_STOP_BITS::BITS_1, SYS_CLOCK_FREQUENCY, 9600 );
-	LLPD::usart_log( USART_NUM::USART_3, "Gen_FX_SYN starting up -----------------------------" );
+	// TODO remove logging entirely once fully tested
+	// LLPD::usart_init( USART_NUM::USART_3, USART_WORD_LENGTH::BITS_8, USART_PARITY::EVEN, USART_CONF::TX_AND_RX,
+	// 			USART_STOP_BITS::BITS_1, SYS_CLOCK_FREQUENCY, 9600 );
+	// LLPD::usart_log( USART_NUM::USART_3, "Gen_FX_SYN starting up -----------------------------" );
 
 	// disable the unused pins
 	disableUnusedPins();
 
-	// TODO TODO TODO TODO TODO TODO need to find the 64MHz source 100KHz clock !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// i2c setup (8MHz source 100KHz clock 0x00201D2B, 32MHz source 100KHz clock 0x00B07CB4, 72MHz source 100KHz 0x10C08DCF)
-	LLPD::i2c_master_setup( I2C_NUM::I2C_2, 0x00B07CB4 ); // i2c uses APB1 clock, so since it's divided by 2, we use 32MHz source clock
-	LLPD::usart_log( USART_NUM::USART_3, "I2C initialized..." );
+	// i2c init
+	LLPD::i2c_master_setup( I2C_NUM::I2C_2, 0x10B07EBA );
+	// LLPD::usart_log( USART_NUM::USART_3, "I2C initialized..." );
 
 	// spi init
-	LLPD::spi_master_init( SPI_NUM::SPI_2, SPI_BAUD_RATE::SYSCLK_DIV_BY_256, SPI_CLK_POL::LOW_IDLE, SPI_CLK_PHASE::FIRST,
+	LLPD::spi_master_init( SPI_NUM::SPI_2, SPI_BAUD_RATE::SYSCLK_DIV_BY_2, SPI_CLK_POL::LOW_IDLE, SPI_CLK_PHASE::FIRST,
 				SPI_DUPLEX::FULL, SPI_FRAME_FORMAT::MSB_FIRST, SPI_DATA_SIZE::BITS_8 );
-	LLPD::usart_log( USART_NUM::USART_3, "spi initialized..." );
+	// LLPD::usart_log( USART_NUM::USART_3, "spi initialized..." );
 
 	// LED pin
 	LLPD::gpio_output_setup( LED_PORT, LED_PIN, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL, GPIO_OUTPUT_SPEED::HIGH );
 	LLPD::gpio_output_set( LED_PORT, LED_PIN, ledState );
 
 	// audio timer setup (for 40 kHz sampling rate at 64 MHz system clock)
-	// NOTE: TIM6 uses APB1 clock, but this value is doubled if the prescaler value != 1
-	LLPD::tim6_counter_setup( 1, 1600, 40000 );
+	LLPD::tim6_counter_setup( 0, 1600, 40000 );
 	LLPD::tim6_counter_enable_interrupts();
-	LLPD::usart_log( USART_NUM::USART_3, "tim6 initialized..." );
+	// LLPD::usart_log( USART_NUM::USART_3, "tim6 initialized..." );
 
 	// DAC setup
 	LLPD::dac_init( true );
-	LLPD::usart_log( USART_NUM::USART_3, "dac initialized..." );
+	// LLPD::usart_log( USART_NUM::USART_3, "dac initialized..." );
 
 	// Op Amp setup
 	LLPD::gpio_analog_setup( GPIO_PORT::A, GPIO_PIN::PIN_5 );
 	LLPD::gpio_analog_setup( GPIO_PORT::A, GPIO_PIN::PIN_6 );
 	LLPD::gpio_analog_setup( GPIO_PORT::A, GPIO_PIN::PIN_7 );
 	LLPD::opamp_init();
-	LLPD::usart_log( USART_NUM::USART_3, "op amp initialized..." );
+	// LLPD::usart_log( USART_NUM::USART_3, "op amp initialized..." );
 
 	// audio timer start
 	LLPD::tim6_counter_start();
-	LLPD::usart_log( USART_NUM::USART_3, "tim6 started..." );
+	// LLPD::usart_log( USART_NUM::USART_3, "tim6 started..." );
 
 	// ADC setup (note, this must be done after the tim6_counter_start() call since it uses the delay function)
 	LLPD::gpio_analog_setup( EFFECT1_ADC_PORT, EFFECT1_ADC_PIN );
@@ -357,60 +159,36 @@ int main(void)
 	LLPD::adc_init( ADC_CYCLES_PER_SAMPLE::CPS_2p5 );
 	LLPD::adc_set_channel_order( 4, EFFECT1_ADC_CHANNEL, EFFECT2_ADC_CHANNEL, EFFECT3_ADC_CHANNEL, AUDIO_IN_CHANNEL );
 	adcSetupComplete = true;
-	LLPD::usart_log( USART_NUM::USART_3, "adc initialized..." );
+	// LLPD::usart_log( USART_NUM::USART_3, "adc initialized..." );
 
 	// pushbutton setup
 	LLPD::gpio_digital_input_setup( EFFECT1_BUTTON_PORT, EFFECT1_BUTTON_PIN, GPIO_PUPD::PULL_UP );
 	LLPD::gpio_digital_input_setup( EFFECT2_BUTTON_PORT, EFFECT2_BUTTON_PIN, GPIO_PUPD::PULL_UP );
 
-	// EEPROM setup and test
-	Eeprom_Manager eeproms( I2C_NUM::I2C_2, EEPROM1_ADDRESS, EEPROM2_ADDRESS );
-	// TODO comment the verification lines out if you're using the eeprom for persistent memory
-	SharedData<uint8_t> eepromValsToWrite = SharedData<uint8_t>::MakeSharedData( 3 );
-	eepromValsToWrite[0] = 64; eepromValsToWrite[1] = 23; eepromValsToWrite[2] = 17;
-	eeproms.writeToMedia( eepromValsToWrite, 45 );
-	eeproms.writeToMedia( eepromValsToWrite, 45 + Eeprom_CAT24C64::EEPROM_SIZE );
-	SharedData<uint8_t> eeprom1Verification = eeproms.readFromMedia( 3, 45 );
-	SharedData<uint8_t> eeprom2Verification = eeproms.readFromMedia( 3, 45 + Eeprom_CAT24C64::EEPROM_SIZE );
-	if ( eeprom1Verification[0] == 64 && eeprom1Verification[1] == 23 && eeprom1Verification[2] == 17 &&
-			eeprom2Verification[0] == 64 && eeprom2Verification[1] == 23 && eeprom2Verification[2] == 17 )
-	{
-		LLPD::usart_log( USART_NUM::USART_3, "eeproms verified..." );
-	}
-	else
-	{
-		LLPD::usart_log( USART_NUM::USART_3, "WARNING!!! eeproms failed verification..." );
-	}
-
 	// SRAM setup and test
-	Sram_Manager srams( SPI_NUM::SPI_2, SRAM1_CS_PORT, SRAM1_CS_PIN, SRAM2_CS_PORT, SRAM2_CS_PIN, SRAM3_CS_PORT, SRAM3_CS_PIN,
-				SRAM4_CS_PORT, SRAM4_CS_PIN );
+	LLPD::gpio_output_setup( SRAM1_CS_PORT, SRAM1_CS_PIN, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL,
+							GPIO_OUTPUT_SPEED::HIGH, false );
+	LLPD::gpio_output_set( SRAM1_CS_PORT, SRAM1_CS_PIN, true );
+	Sram_23K256 sram( SPI_NUM::SPI_2, SRAM1_CS_PORT, SRAM1_CS_PIN );
 	SharedData<uint8_t> sramValsToWrite = SharedData<uint8_t>::MakeSharedData( 3 );
 	sramValsToWrite[0] = 25; sramValsToWrite[1] = 16; sramValsToWrite[2] = 8;
-	srams.writeToMedia( sramValsToWrite, 45 );
-	srams.writeToMedia( sramValsToWrite, 45 + Sram_23K256::SRAM_SIZE );
-	srams.writeToMedia( sramValsToWrite, 45 + Sram_23K256::SRAM_SIZE * 2 );
-	srams.writeToMedia( sramValsToWrite, 45 + Sram_23K256::SRAM_SIZE * 3 );
-	SharedData<uint8_t> sram1Verification = srams.readFromMedia( 3, 45 );
-	SharedData<uint8_t> sram2Verification = srams.readFromMedia( 3, 45 + Sram_23K256::SRAM_SIZE );
-	SharedData<uint8_t> sram3Verification = srams.readFromMedia( 3, 45 + Sram_23K256::SRAM_SIZE * 2 );
-	SharedData<uint8_t> sram4Verification = srams.readFromMedia( 3, 45 + Sram_23K256::SRAM_SIZE * 3 );
-	if ( sram1Verification[0] == 25 && sram1Verification[1] == 16 && sram1Verification[2] == 8 &&
-			sram2Verification[0] == 25 && sram2Verification[1] == 16 && sram2Verification[2] == 8 &&
-			sram3Verification[0] == 25 && sram3Verification[1] == 16 && sram3Verification[2] == 8 &&
-			sram4Verification[0] == 25 && sram4Verification[1] == 16 && sram4Verification[2] == 8 )
+	sram.writeToMedia( sramValsToWrite, 45 );
+	SharedData<uint8_t> sram1Verification = sram.readFromMedia( 3, 45 );
+	if ( sram1Verification[0] == 25 && sram1Verification[1] == 16 && sram1Verification[2] == 8 )
 	{
-		LLPD::usart_log( USART_NUM::USART_3, "srams verified..." );
+		// LLPD::usart_log( USART_NUM::USART_3, "sram verified..." );
 	}
 	else
 	{
-		LLPD::usart_log( USART_NUM::USART_3, "WARNING!!! srams failed verification..." );
+		// LLPD::usart_log( USART_NUM::USART_3, "WARNING!!! sram failed verification..." );
 	}
+	bool usingSeqMode = sram.setSequentialMode( true );
+	while ( ! usingSeqMode ) { usingSeqMode = sram.setSequentialMode( true ); }
 
 	// lilks setup
 	AudioBuffer audioBuffer;
 	MidiHandler midiHandler;
-	LilKSVoiceManager voiceManager( &srams );
+	LilKSVoiceManager voiceManager( &sram );
 
 	voiceManager.bindToKeyEventSystem();
 
@@ -420,29 +198,33 @@ int main(void)
 	midiHandlerPtr  = &midiHandler;
 	voiceManagerPtr = &voiceManager;
 
-	lilKSSetupComplete = true;
+	// enable usart for MIDI
+	LLPD::usart_init( USART_NUM::USART_3, USART_WORD_LENGTH::BITS_8, USART_PARITY::EVEN, USART_CONF::TX_AND_RX,
+				USART_STOP_BITS::BITS_1, SYS_CLOCK_FREQUENCY, 31250 );
 
-	LLPD::usart_log( USART_NUM::USART_3, "Gen_FX_SYN setup complete, entering while loop -------------------------------" );
+	lilKSSetupComplete = true;
+	keepBlinking = true;
+
+	// LLPD::usart_log( USART_NUM::USART_3, "Gen_FX_SYN setup complete, entering while loop -------------------------------" );
 
 	while ( true )
 	{
+		midiHandler.dispatchEvents();
 		audioBuffer.pollToFillBuffers();
 
-		/*
 		if ( ! LLPD::gpio_input_get(EFFECT1_BUTTON_PORT, EFFECT1_BUTTON_PIN) )
 		{
-			LLPD::usart_log( USART_NUM::USART_3, "BUTTON 1 PRESSED" );
+			// LLPD::usart_log( USART_NUM::USART_3, "BUTTON 1 PRESSED" );
 		}
 
 		if ( ! LLPD::gpio_input_get(EFFECT2_BUTTON_PORT, EFFECT2_BUTTON_PIN) )
 		{
-			LLPD::usart_log( USART_NUM::USART_3, "BUTTON 2 PRESSED" );
+			// LLPD::usart_log( USART_NUM::USART_3, "BUTTON 2 PRESSED" );
 		}
 
-		LLPD::usart_log_int( USART_NUM::USART_3, "POT 1 VALUE: ", LLPD::adc_get_channel_value(EFFECT1_ADC_CHANNEL) );
-		LLPD::usart_log_int( USART_NUM::USART_3, "POT 2 VALUE: ", LLPD::adc_get_channel_value(EFFECT2_ADC_CHANNEL) );
-		LLPD::usart_log_int( USART_NUM::USART_3, "POT 3 VALUE: ", LLPD::adc_get_channel_value(EFFECT3_ADC_CHANNEL) );
-		*/
+		// LLPD::usart_log_int( USART_NUM::USART_3, "POT 1 VALUE: ", LLPD::adc_get_channel_value(EFFECT1_ADC_CHANNEL) );
+		// LLPD::usart_log_int( USART_NUM::USART_3, "POT 2 VALUE: ", LLPD::adc_get_channel_value(EFFECT2_ADC_CHANNEL) );
+		// LLPD::usart_log_int( USART_NUM::USART_3, "POT 3 VALUE: ", LLPD::adc_get_channel_value(EFFECT3_ADC_CHANNEL) );
 	}
 }
 
@@ -452,11 +234,8 @@ extern "C" void TIM6_DAC_IRQHandler (void)
 	{
 		if ( lilKSSetupComplete )
 		{
-			LLPD::adc_perform_conversion_sequence();
-
-			uint16_t outputVal = static_cast<uint16_t>( audioBufferPtr->getNextSample() * 4095 );
-
-			LLPD::dac_send( outputVal );
+			unsigned int kpVal = static_cast<unsigned int>( audioBufferPtr->getNextSample() * 4095.0f );
+			LLPD::dac_send( kpVal );
 		}
 
 		if ( keepBlinking && ledIncr > ledMax )
@@ -485,12 +264,10 @@ extern "C" void TIM6_DAC_IRQHandler (void)
 
 extern "C" void USART3_IRQHandler (void)
 {
-	if ( lilKSSetupComplete )
-	{
-		// loopback test code for usart recieve
-		uint16_t data = LLPD::usart_receive( USART_NUM::USART_3 );
+	uint16_t data = LLPD::usart_receive( USART_NUM::USART_3 );
 
+	if ( data != MIDI_TIMING_CLOCK ) // not using any timing clock stuff and this can slow things down
+	{
 		midiHandlerPtr->processByte( data );
-		midiHandlerPtr->dispatchEvents();
 	}
 }

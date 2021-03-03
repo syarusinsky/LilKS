@@ -5,14 +5,17 @@
 #include <cstdlib>
 #include <string.h>
 
+
 LilKSVoice::LilKSVoice (IStorageMedia* storageMedia, unsigned int voiceNum ) :
 	m_StorageMedia( storageMedia ),
-	m_KSBufferOffset( m_NoiseBufferSize * sizeof(float) * voiceNum ),
+	m_KSBufferOffset( (m_NoiseBufferSize) * sizeof(float) * voiceNum ),
 	m_KSBufferIncr( 0 ),
-	m_KSBufferMax( m_NoiseBufferSize )
+	m_KSBufferMax( m_NoiseBufferSize ),
+	m_KeyEventOccurring( false ),
+	m_CallEventOccurring( false )
 {
-	// fill noise buffer 	NOTE: this means the noise buffer will be written to for each voice that's initialized
-	// 			which is dumb, but whatever
+	// fill noise buffer 	TODO: this means the noise buffer will be written to for each voice that's initialized
+	// 			which is dumb, but whatever. Should fix this in the future though...
 	SharedData<uint8_t> noiseBuffer = SharedData<uint8_t>::MakeSharedData( m_NoiseBufferSize * sizeof(float) );
 	float* noiseBufferPtr = reinterpret_cast<float*>( noiseBuffer.getPtr() );
 	for ( int sample = 0; sample < m_NoiseBufferSize; sample++ )
@@ -27,9 +30,9 @@ LilKSVoice::LilKSVoice (IStorageMedia* storageMedia, unsigned int voiceNum ) :
 	SharedData<uint8_t> ksBuffer = m_StorageMedia->readFromMedia( m_NoiseBufferSize * sizeof(float), m_KSBufferOffset );
 	float* ksBufferPtr = reinterpret_cast<float*>( ksBuffer.getPtr() );
 
-	for ( unsigned int sample = 0; sample < ABUFFER_SIZE; sample++ )
+	for ( unsigned int sample = 0; sample < m_NoiseBufferSize; sample++ )
 	{
-		ksBufferPtr[m_KSBufferIncr] = 0.0f;
+		ksBufferPtr[sample] = 0.0f;
 	}
 
 	m_StorageMedia->writeToMedia( ksBuffer, m_KSBufferOffset );
@@ -41,8 +44,11 @@ LilKSVoice::~LilKSVoice()
 
 void LilKSVoice::onKeyEvent (const KeyEvent& keyEvent)
 {
-	if ( keyEvent.pressed() == KeyPressedEnum::PRESSED || keyEvent.pressed() == KeyPressedEnum::HELD )
+	// TODO permanently remove m_CallEventOccurring???
+	if ( (keyEvent.pressed() == KeyPressedEnum::PRESSED || keyEvent.pressed() == KeyPressedEnum::HELD) ) // && ! m_CallEventOccurring )
 	{
+		m_KeyEventOccurring = true;
+
 		float frequency = MUSIC_A0;
 		switch ( keyEvent.note() )
 		{
@@ -372,43 +378,117 @@ void LilKSVoice::onKeyEvent (const KeyEvent& keyEvent)
 		}
 
 		// reset the buffer size to the correct size for the frequency
+		m_KSBufferIncr = 0;
 		m_KSBufferMax = static_cast<int>( SAMPLE_RATE / frequency );
 
 		// retrieve the noise buffer from the storage media
 		SharedData<uint8_t> noiseBuffer = m_StorageMedia->readFromMedia( m_NoiseBufferSize * sizeof(float), 0 );
-		float* noiseBufferPtr = reinterpret_cast<float*>( noiseBuffer.getPtr() );
 
-		// retrieve the KS buffer from the storage media
-		SharedData<uint8_t> ksBuffer = m_StorageMedia->readFromMedia( m_NoiseBufferSize * sizeof(float), m_KSBufferOffset );
-		float* ksBufferPtr = reinterpret_cast<float*>( ksBuffer.getPtr() );
+		// write the noise buffer to the ks buffer in the storage media
+		m_StorageMedia->writeToMedia( noiseBuffer, m_KSBufferOffset );
 
-		// refill the buffer with noise
-		for ( unsigned int sample = 0; sample < m_KSBufferMax; sample++ )
-		{
-			ksBufferPtr[sample] = noiseBufferPtr[sample];
-		}
-
-		// rewrite the KS buffer to the storage media
-		m_StorageMedia->writeToMedia( ksBuffer, m_KSBufferOffset );
+		m_KeyEventOccurring = false;
 	}
 }
 
 void LilKSVoice::call (float* writeBuffer)
 {
-	// retrieve the KS buffer from the storage media
-	SharedData<uint8_t> ksBuffer = m_StorageMedia->readFromMedia( m_NoiseBufferSize * sizeof(float), m_KSBufferOffset );
-	float* ksBufferPtr = reinterpret_cast<float*>( ksBuffer.getPtr() );
+	// TODO consider permanently removing m_KeyEventOccurring
+	// if ( ! m_KeyEventOccurring )
+	// {
+		m_CallEventOccurring = true;
 
-	// fill the buffer with samples from this voice
-	for ( unsigned int sample = 0; sample < ABUFFER_SIZE; sample++ )
-	{
-		float value = ksBufferPtr[m_KSBufferIncr];
-		writeBuffer[sample] += ( value * 0.166665f );
-		m_KSBufferIncr = ( m_KSBufferIncr + 1 ) % m_KSBufferMax;
+		if ( m_KSBufferMax < ABUFFER_SIZE )
+		{
+			SharedData<uint8_t> ksBuffer = m_StorageMedia->readFromMedia( ABUFFER_SIZE * sizeof(float), m_KSBufferOffset );
+			float* ksBufferPtr = reinterpret_cast<float*>( ksBuffer.getPtr() );
 
-		ksBufferPtr[m_KSBufferIncr] = ( value + ksBufferPtr[m_KSBufferIncr] ) * 0.5f;
-	}
+			for ( unsigned int sample = 0; sample < ABUFFER_SIZE; sample++ )
+			{
+				float value = ksBufferPtr[m_KSBufferIncr];
+				writeBuffer[sample] += value;
+				m_KSBufferIncr = ( m_KSBufferIncr + 1 ) % m_KSBufferMax;
 
-	// rewrite the KS buffer to the storage media
-	m_StorageMedia->writeToMedia( ksBuffer, m_KSBufferOffset );
+				float nextValue = ksBufferPtr[m_KSBufferIncr];
+				ksBufferPtr[m_KSBufferIncr] = ( value + nextValue ) * 0.5f;
+			}
+
+			m_StorageMedia->writeToMedia( ksBuffer, m_KSBufferOffset );
+		}
+		else // the size of the KS buffer is larger than the audio buffer size
+		{
+			int start = m_KSBufferIncr;
+			int end = m_KSBufferMax;
+			int headroom = ( end - start );
+			if ( headroom > ABUFFER_SIZE ) // no need to wrap around buffer
+			{
+				unsigned int readWriteOffset = m_KSBufferOffset + ( m_KSBufferIncr * sizeof(float) );
+
+				// +1 because we need an additional sample for filtering
+				SharedData<uint8_t> ksBuffer = m_StorageMedia->readFromMedia( (ABUFFER_SIZE + 1) * sizeof(float), readWriteOffset );
+				float* ksBufferPtr = reinterpret_cast<float*>( ksBuffer.getPtr() );
+
+				for ( unsigned int sample = 0; sample < ABUFFER_SIZE; sample++ )
+				{
+					float value = ksBufferPtr[sample];
+					writeBuffer[sample] += value;
+					m_KSBufferIncr++;
+
+					ksBufferPtr[sample + 1] = ( value + ksBufferPtr[sample + 1] ) * 0.5f;
+				}
+
+				m_StorageMedia->writeToMedia( ksBuffer, readWriteOffset );
+			}
+			else // need to wrap around buffer
+			{
+				// get first part of buffer
+				unsigned int ksBuffer1Start = m_KSBufferOffset + ( m_KSBufferIncr * sizeof(float) );
+				SharedData<uint8_t> ksBuffer1 = m_StorageMedia->readFromMedia( headroom * sizeof(float), ksBuffer1Start );
+				float* ksBuffer1Ptr = reinterpret_cast<float*>( ksBuffer1.getPtr() );
+
+				// get the 'wrap around' part of the buffer
+				end = ( start + ABUFFER_SIZE ) % end;
+				unsigned int ksBuffer2Start = m_KSBufferOffset;
+				SharedData<uint8_t> ksBuffer2 = m_StorageMedia->readFromMedia( (end + 1) * sizeof(float), ksBuffer2Start );
+				float* ksBuffer2Ptr = reinterpret_cast<float*>( ksBuffer2.getPtr() );
+
+				// fill the first part of the buffer
+				unsigned int sample = 0;
+				unsigned int endOfFirst = ( headroom - 1 > 0 ) ? ( headroom - 1 ) : 0;
+				while ( sample < endOfFirst )
+				{
+					float value = ksBuffer1Ptr[sample];
+					writeBuffer[sample] += value;
+					sample++;
+					m_KSBufferIncr++;
+
+					ksBuffer1Ptr[sample] = ( value + ksBuffer1Ptr[sample] ) * 0.5f;
+				}
+
+				// fill the last sample of the KS buffer and filter to the beginning of the KS buffer
+				float value = ksBuffer1Ptr[sample];
+				writeBuffer[sample] += value;
+				sample++;
+				m_KSBufferIncr = 0;
+
+				ksBuffer2Ptr[m_KSBufferIncr] = ( value + ksBuffer2Ptr[m_KSBufferIncr] ) * 0.5f;
+
+				// fill the 'wrap around' part of the buffer
+				while ( sample < ABUFFER_SIZE )
+				{
+					float value = ksBuffer2Ptr[m_KSBufferIncr];
+					writeBuffer[sample] += value;
+					sample++;
+					m_KSBufferIncr++;
+
+					ksBuffer2Ptr[m_KSBufferIncr] = ( value + ksBuffer2Ptr[m_KSBufferIncr] ) * 0.5f;
+				}
+
+				m_StorageMedia->writeToMedia( ksBuffer1, ksBuffer1Start );
+				m_StorageMedia->writeToMedia( ksBuffer2, ksBuffer2Start );
+			}
+		}
+
+		m_CallEventOccurring = false;
+	// }
 }

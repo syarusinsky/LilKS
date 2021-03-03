@@ -3,9 +3,24 @@
 #include <cstdlib>
 #include <string.h>
 
+#define LILKS_INIT(voiceNum) LilKSVoice(storageMedia, voiceNum)
+
+#if LILKS_NUM_VOICES == 1
+#define LILKS_INIT_ALL_VOICES LILKS_INIT(1)
+#elif LILKS_NUM_VOICES == 2
+#define LILKS_INIT_ALL_VOICES LILKS_INIT(1), LILKS_INIT(2)
+#elif LILKS_NUM_VOICES == 3
+#define LILKS_INIT_ALL_VOICES LILKS_INIT(1), LILKS_INIT(2), LILKS_INIT(3)
+#elif LILKS_NUM_VOICES == 4
+#define LILKS_INIT_ALL_VOICES LILKS_INIT(1), LILKS_INIT(2), LILKS_INIT(3), LILKS_INIT(4)
+#elif LILKS_NUM_VOICES == 5
+#define LILKS_INIT_ALL_VOICES LILKS_INIT(1), LILKS_INIT(2), LILKS_INIT(3), LILKS_INIT(4), LILKS_INIT(5)
+#elif LILKS_NUM_VOICES == 6
+#define LILKS_INIT_ALL_VOICES LILKS_INIT(1), LILKS_INIT(2), LILKS_INIT(3), LILKS_INIT(4), LILKS_INIT(5), LILKS_INIT(6)
+#endif
+
 LilKSVoiceManager::LilKSVoiceManager (IStorageMedia* storageMedia) :
-	m_Voices{ LilKSVoice(storageMedia, 1), LilKSVoice(storageMedia, 2), LilKSVoice(storageMedia, 3),
-			LilKSVoice(storageMedia, 4), LilKSVoice(storageMedia, 5), LilKSVoice(storageMedia, 6) },
+	m_Voices{ LILKS_INIT_ALL_VOICES },
 	m_Monophonic( false ),
 	m_ActiveKeyEventIndex( 0 )
 {
@@ -193,6 +208,13 @@ void LilKSVoiceManager::call (float* writeBuffer)
 	{
 		m_Voices[voice].call( writeBuffer );
 	}
+
+#if LILKS_NUM_VOICES > 1
+	for ( unsigned int sample = 0; sample < ABUFFER_SIZE; sample++ )
+	{
+		writeBuffer[sample] = ( writeBuffer[sample] * (1.0f / LILKS_NUM_VOICES) );
+	}
+#endif
 }
 
 void LilKSVoiceManager::setMonophonic (bool monophonic)

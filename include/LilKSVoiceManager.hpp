@@ -9,7 +9,11 @@
 
 #include "LilKSVoice.hpp"
 
+#ifdef TARGET_BUILD
+#define LILKS_NUM_VOICES 1
+#else
 #define LILKS_NUM_VOICES 6
+#endif
 
 class LilKSVoiceManager : public IBufferCallback, public IKeyEventListener
 {
