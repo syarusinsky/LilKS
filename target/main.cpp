@@ -266,7 +266,7 @@ extern "C" void USART3_IRQHandler (void)
 {
 	uint16_t data = LLPD::usart_receive( USART_NUM::USART_3 );
 
-	if ( data != MIDI_TIMING_CLOCK ) // not using any timing clock stuff and this can slow things down
+	if ( data != MIDI_TIMING_CLOCK && data != MIDI_ACTIVE_SENSING ) // not using any timing clock or active sensing stuff, slow
 	{
 		midiHandlerPtr->processByte( data );
 	}

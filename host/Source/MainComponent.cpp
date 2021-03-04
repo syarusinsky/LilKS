@@ -110,6 +110,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
 	    }
 
 	    sAudioBuffer.pollToFillBuffers();
+	    midiHandler.dispatchEvents();
     }
     catch ( std::exception& e )
     {
@@ -174,6 +175,4 @@ void MainComponent::handleIncomingMidiMessage (juce::MidiInput* source, const ju
 	{
 		midiHandler.processByte( message.getRawData()[byte] );
 	}
-
-	midiHandler.dispatchEvents();
 }
