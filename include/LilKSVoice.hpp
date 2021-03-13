@@ -29,9 +29,6 @@ class LilKSVoice : public IKeyEventListener, public IBufferCallback
 		const unsigned int 	m_KSBufferOffset;
 		volatile unsigned int 	m_KSBufferIncr;
 		volatile unsigned int 	m_KSBufferMax;
-
-		volatile bool 		m_KeyEventOccurring;
-		volatile bool 		m_CallEventOccurring;
 };
 
 #endif // LILKSVOICE_HPP

@@ -109,23 +109,15 @@ int main(void)
 	LLPD::gpio_enable_clock( GPIO_PORT::C );
 	LLPD::gpio_enable_clock( GPIO_PORT::F );
 
-	// USART setup
-	// TODO remove logging entirely once fully tested
-	// LLPD::usart_init( USART_NUM::USART_3, USART_WORD_LENGTH::BITS_8, USART_PARITY::EVEN, USART_CONF::TX_AND_RX,
-	// 			USART_STOP_BITS::BITS_1, SYS_CLOCK_FREQUENCY, 9600 );
-	// LLPD::usart_log( USART_NUM::USART_3, "Gen_FX_SYN starting up -----------------------------" );
-
 	// disable the unused pins
 	disableUnusedPins();
 
 	// i2c init
 	LLPD::i2c_master_setup( I2C_NUM::I2C_2, 0x10B07EBA );
-	// LLPD::usart_log( USART_NUM::USART_3, "I2C initialized..." );
 
 	// spi init
 	LLPD::spi_master_init( SPI_NUM::SPI_2, SPI_BAUD_RATE::SYSCLK_DIV_BY_2, SPI_CLK_POL::LOW_IDLE, SPI_CLK_PHASE::FIRST,
 				SPI_DUPLEX::FULL, SPI_FRAME_FORMAT::MSB_FIRST, SPI_DATA_SIZE::BITS_8 );
-	// LLPD::usart_log( USART_NUM::USART_3, "spi initialized..." );
 
 	// LED pin
 	LLPD::gpio_output_setup( LED_PORT, LED_PIN, GPIO_PUPD::NONE, GPIO_OUTPUT_TYPE::PUSH_PULL, GPIO_OUTPUT_SPEED::HIGH );
@@ -134,22 +126,18 @@ int main(void)
 	// audio timer setup (for 40 kHz sampling rate at 64 MHz system clock)
 	LLPD::tim6_counter_setup( 0, 1600, 40000 );
 	LLPD::tim6_counter_enable_interrupts();
-	// LLPD::usart_log( USART_NUM::USART_3, "tim6 initialized..." );
 
 	// DAC setup
 	LLPD::dac_init( true );
-	// LLPD::usart_log( USART_NUM::USART_3, "dac initialized..." );
 
 	// Op Amp setup
 	LLPD::gpio_analog_setup( GPIO_PORT::A, GPIO_PIN::PIN_5 );
 	LLPD::gpio_analog_setup( GPIO_PORT::A, GPIO_PIN::PIN_6 );
 	LLPD::gpio_analog_setup( GPIO_PORT::A, GPIO_PIN::PIN_7 );
 	LLPD::opamp_init();
-	// LLPD::usart_log( USART_NUM::USART_3, "op amp initialized..." );
 
 	// audio timer start
 	LLPD::tim6_counter_start();
-	// LLPD::usart_log( USART_NUM::USART_3, "tim6 started..." );
 
 	// ADC setup (note, this must be done after the tim6_counter_start() call since it uses the delay function)
 	LLPD::gpio_analog_setup( EFFECT1_ADC_PORT, EFFECT1_ADC_PIN );
@@ -159,7 +147,6 @@ int main(void)
 	LLPD::adc_init( ADC_CYCLES_PER_SAMPLE::CPS_2p5 );
 	LLPD::adc_set_channel_order( 4, EFFECT1_ADC_CHANNEL, EFFECT2_ADC_CHANNEL, EFFECT3_ADC_CHANNEL, AUDIO_IN_CHANNEL );
 	adcSetupComplete = true;
-	// LLPD::usart_log( USART_NUM::USART_3, "adc initialized..." );
 
 	// pushbutton setup
 	LLPD::gpio_digital_input_setup( EFFECT1_BUTTON_PORT, EFFECT1_BUTTON_PIN, GPIO_PUPD::PULL_UP );
@@ -205,13 +192,12 @@ int main(void)
 	lilKSSetupComplete = true;
 	keepBlinking = true;
 
-	// LLPD::usart_log( USART_NUM::USART_3, "Gen_FX_SYN setup complete, entering while loop -------------------------------" );
-
 	while ( true )
 	{
 		midiHandler.dispatchEvents();
 		audioBuffer.pollToFillBuffers();
 
+		/*
 		if ( ! LLPD::gpio_input_get(EFFECT1_BUTTON_PORT, EFFECT1_BUTTON_PIN) )
 		{
 			// LLPD::usart_log( USART_NUM::USART_3, "BUTTON 1 PRESSED" );
@@ -225,6 +211,7 @@ int main(void)
 		// LLPD::usart_log_int( USART_NUM::USART_3, "POT 1 VALUE: ", LLPD::adc_get_channel_value(EFFECT1_ADC_CHANNEL) );
 		// LLPD::usart_log_int( USART_NUM::USART_3, "POT 2 VALUE: ", LLPD::adc_get_channel_value(EFFECT2_ADC_CHANNEL) );
 		// LLPD::usart_log_int( USART_NUM::USART_3, "POT 3 VALUE: ", LLPD::adc_get_channel_value(EFFECT3_ADC_CHANNEL) );
+		*/
 	}
 }
 
